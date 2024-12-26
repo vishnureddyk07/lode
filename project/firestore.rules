@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function hasValidTimestamp() {
+      return request.resource.data.createdAt is timestamp;
+    }
+
+    function hasRequiredFields(requiredFields) {
+      return request.resource.data.keys().hasAll(requiredFields);
+    }
+
+    // Articles collection
+    match /articles/{articleId} {
+      allow read: if true;
+      allow create: if isAuthenticated() 
+        && hasValidTimestamp()
+        && hasRequiredFields(['title', 'content', 'category', 'userId', 'userEmail']);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // Events collection
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isAuthenticated() 
+        && hasValidTimestamp()
+        && hasRequiredFields(['title', 'description', 'date', 'location', 'userId', 'userEmail']);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // Gallery collection
+    match /gallery/{imageId} {
+      allow read: if true;
+      allow create: if isAuthenticated() 
+        && hasValidTimestamp()
+        && hasRequiredFields(['title', 'imageUrl', 'userId', 'userEmail']);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // Podcasts collection
+    match /podcasts/{podcastId} {
+      allow read: if true;
+      allow create: if isAuthenticated() 
+        && hasValidTimestamp()
+        && hasRequiredFields(['title', 'description', 'type', 'url', 'userId', 'userEmail']);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+  }
+}
